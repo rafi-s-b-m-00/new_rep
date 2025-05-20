@@ -1,15 +1,29 @@
-name: Auto-Tag Release
+name: Release and Tag
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  tag:
+  release:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: Klemensas/action-autotag@stable
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from setup.py
+        id: get_version
+        run: |
+          VERSION=$(python setup.py --version)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "::set-output name=tag::$VERSION"
+
+      - name: Create GitHub Release
+        uses: mathieudutour/github-tag-action@v6.1
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: v${{ steps.get_version.outputs.tag }}
+          tag_prefix: "v"
+          tag_message: "Release v${{ steps.get_version.outputs.tag }}"
